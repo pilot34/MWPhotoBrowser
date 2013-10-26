@@ -43,7 +43,11 @@
 @property (nonatomic) BOOL zoomPhotosToFill;
 @property (nonatomic) BOOL displayNavArrows;
 @property (nonatomic) BOOL displayActionButton;
+@property (nonatomic) BOOL changeNavbarAppearance;
+@property (nonatomic) BOOL navbarHidingEnabled;
+@property (nonatomic) BOOL cancelsPopAnimation;
 @property (nonatomic, readonly) NSUInteger currentIndex;
+@property (strong, nonatomic) UIColor *backgroundColor;
 
 // Init
 - (id)initWithPhotos:(NSArray *)photosArray  __attribute__((deprecated("Use initWithDelegate: instead"))); // Depreciated

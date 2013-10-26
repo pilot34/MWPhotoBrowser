@@ -171,6 +171,9 @@
     _displayActionButton = YES;
     _displayNavArrows = NO;
     _zoomPhotosToFill = YES;
+    _changeNavbarAppearance = YES;
+    _navbarHidingEnabled = YES;
+    _cancelsPopAnimation = NO;
     _performingLayout = NO; // Reset on view did appear
     _rotating = NO;
     _viewIsActive = NO;
@@ -228,7 +231,7 @@
 - (void)viewDidLoad {
 	
 	// View
-	self.view.backgroundColor = [UIColor blackColor];
+	self.view.backgroundColor = self.backgroundColor;
     self.view.clipsToBounds = YES;
 	
 	// Setup paging scrolling view
@@ -239,7 +242,7 @@
 	_pagingScrollView.delegate = self;
 	_pagingScrollView.showsHorizontalScrollIndicator = NO;
 	_pagingScrollView.showsVerticalScrollIndicator = NO;
-	_pagingScrollView.backgroundColor = [UIColor blackColor];
+	_pagingScrollView.backgroundColor = self.backgroundColor;
     _pagingScrollView.contentSize = [self contentSizeForPagingScrollView];
 	[self.view addSubview:_pagingScrollView];
 	
@@ -262,10 +265,21 @@
             arrowPathFormat = @"MWPhotoBrowser.bundle/images/UIBarButtonItemArrow%@.png";
         }
         _previousButton = [[UIBarButtonItem alloc] initWithImage:[UIImage imageNamed:[NSString stringWithFormat:arrowPathFormat, @"Left"]] style:UIBarButtonItemStylePlain target:self action:@selector(gotoPreviousPage)];
-        _nextButton = [[UIBarButtonItem alloc] initWithImage:[UIImage imageNamed:[NSString stringWithFormat:arrowPathFormat, @"Right"]] style:UIBarButtonItemStylePlain target:self action:@selector(gotoNextPage)];
+        _nextButton = [[UIBarButtonItem alloc] initWithImage:[UIImage imageNamed:[NSString stringWithFormat:arrowPathFormat, @"Right"]] style:UIBarButtonItemStyleBordered target:self action:@selector(gotoNextPage)];
     }
     if (self.displayActionButton) {
         _actionButton = [[UIBarButtonItem alloc] initWithBarButtonSystemItem:UIBarButtonSystemItemAction target:self action:@selector(actionButtonPressed:)];
+    }
+    
+    if (self.cancelsPopAnimation)
+    {
+        UIBarButtonItem *backBarButtonItem = [[UIBarButtonItem alloc] initWithTitle:@"Назад" style:UIBarButtonItemStyleDone target:self action:@selector(back)];
+        [backBarButtonItem setTitleTextAttributes:@{
+                                                    UITextAttributeTextColor : [UIColor whiteColor],
+                                                    UITextAttributeFont : [UIFont fontWithName:@"HelveticaNeue" size:17]
+                                                    }
+                                         forState:UIControlStateNormal];
+        self.navigationItem.leftBarButtonItem = backBarButtonItem;
     }
     
     // Update
@@ -274,6 +288,11 @@
 	// Super
     [super viewDidLoad];
 	
+}
+
+- (void)back
+{
+    [self dismissViewControllerAnimated:NO completion:nil];
 }
 
 - (void)performLayout {
@@ -287,7 +306,9 @@
     [_recycledPages removeAllObjects];
     
     // Navigation buttons
-    if ([self.navigationController.viewControllers objectAtIndex:0] == self) {
+    if (self.cancelsPopAnimation) {
+        
+    } else if ([self.navigationController.viewControllers objectAtIndex:0] == self) {
         // We're first on stack so show done button
         UIBarButtonItem *doneButton = [[UIBarButtonItem alloc] initWithTitle:NSLocalizedString(@"Done", nil) style:UIBarButtonItemStylePlain target:self action:@selector(doneButtonPressed:)];
         // Set appearance
@@ -418,6 +439,9 @@
         [[UIApplication sharedApplication] setStatusBarStyle:UIStatusBarStyleBlackTranslucent animated:animated];
     }
     
+    if (SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(@"7"))
+        [self setNeedsStatusBarAppearanceUpdate];
+    
     // Navigation bar appearance
     if (!_viewIsActive && [self.navigationController.viewControllers objectAtIndex:0] != self) {
         [self storePreviousNavBarAppearance];
@@ -473,6 +497,9 @@
 #pragma mark - Nav Bar Appearance
 
 - (void)setNavBarAppearance:(BOOL)animated {
+    if (!self.changeNavbarAppearance)
+        return;
+    
     [self.navigationController setNavigationBarHidden:NO animated:animated];
     UINavigationBar *navBar = self.navigationController.navigationBar;
     navBar.tintColor = SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(@"7") ? [UIColor whiteColor] : nil;
@@ -502,6 +529,9 @@
 }
 
 - (void)restorePreviousNavBarAppearance:(BOOL)animated {
+    if (!self.changeNavbarAppearance)
+        return;
+    
     if (_didSavePreviousStateOfNavBar) {
         [self.navigationController setNavigationBarHidden:_previousNavBarHidden animated:animated];
         UINavigationBar *navBar = self.navigationController.navigationBar;
@@ -1028,7 +1058,7 @@
 // If permanent then we don't set timers to hide again
 // Fades all controls on iOS 5 & 6, and iOS 7 controls slide and fade
 - (void)setControlsHidden:(BOOL)hidden animated:(BOOL)animated permanent:(BOOL)permanent {
-    
+    if (!self.navbarHidingEnabled) hidden = NO;
     // Force visible if no photos
     if (![self numberOfPhotos]) hidden = NO;
     
@@ -1199,6 +1229,13 @@
         if (!_viewIsActive)
             [self tilePages]; // Force tiling if view is not visible
     }
+}
+
+- (UIColor *)backgroundColor {
+    if (_backgroundColor)
+        return _backgroundColor;
+    
+    return [UIColor blackColor];
 }
 
 #pragma mark - Misc
