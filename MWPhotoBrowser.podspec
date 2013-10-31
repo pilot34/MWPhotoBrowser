@@ -11,7 +11,6 @@ Pod::Spec.new do |s|
   s.subspec 'ARC' do |arc|
     arc.source_files = 'MWPhotoBrowser/Classes/*.{h,m}'
     arc.requires_arc = true
-    arc.prefix_header_contents = '#import "MWPreprocessor.h"'
   end
   
   s.resources = "MWPhotoBrowser/MWPhotoBrowser.bundle"
